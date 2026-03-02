@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALARM SIRINE - FULL FITUR</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            font-family: Arial;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 0 !important;
+        }
+
+        .bg-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+        }
+        .bg-video {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+
+        .content {
+            text-align: center;
+            padding: 2.5rem 2rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .title-home, .title-active {
+            color: #0099ff;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 10px #0099ff;
+            font-size: 1.8rem;
+            width: 100%;
+        }
+
+        #passwordInput {
+            padding: 1.2rem;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            border: 3px solid #0099ff;
+            margin-bottom: 1.5rem;
+            width: 85%;
+            text-align: center;
+            display: none;
+        }
+
+        button {
+            padding: 1.3rem 4rem;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            color: white;
+            width: 85%;
+            margin: 0.5rem 0;
+        }
+        #startBtn { 
+            background: #0099ff;
+            display: block; 
+        }
+        #stopBtn { 
+            background: #00cc66;
+            display: none; 
+        }
+
+        footer, .browser-footer, [class*="ad"], [class*="banner"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-container">
+        <video class="bg-video" id="bgFirst" autoplay muted loop playsinline>
+            <source src="istockphoto-2188329767-640_adpp_is.mp4" type="video/mp4">
+        </video>
+        <video class="bg-video" id="bgThird" style="display: none;" autoplay muted loop playsinline>
+            <source src="5364-183788428_medium.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="content">
+        <h1 class="title-home" id="mainTitle">TEKAN TOMBOL DIBAWAH CUY</h1>
+        <input type="password" id="passwordInput" placeholder="MASUKIN PASSWORD">
+        <button id="startBtn">OK</button>
+        <button id="stopBtn">MATIKAN SUARA</button>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const passwordInput = document.getElementById('passwordInput');
+        const mainTitle = document.getElementById('mainTitle');
+        const bgFirst = document.getElementById('bgFirst');
+        const bgThird = document.getElementById('bgThird');
+        
+        const CORRECT_PASSWORD = "1234";
+        let torchTrack, flashInterval;
+        let sirenAudio, idiotAudio, ketawaAudio, audioCtx, ngeengOsc;
+
+        async function startAll() {
+            // GANTI BACKGROUND LANGSUNG TANPA JEDA
+            bgFirst.style.display = 'none';
+            bgThird.style.display = 'block';
+
+            // UBAH TEKS & ELEMEN
+            mainTitle.textContent = "MASUKAN PASSWORDWA: 895338526464 UNTUK MENDAPATKAN PASSWORD";
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'block';
+            passwordInput.style.display = 'block';
+
+            // SUARA
+            ketawaAudio = new Audio('ketawa-jahat-milyhya.mp3');
+            ketawaAudio.play();
+            setTimeout(() => ketawaAudio.pause(), 12000);
+
+            sirenAudio = new Audio('mixkit-sci-fi-ship-siren-alert-1653.wav');
+            sirenAudio.loop = true;
+            await sirenAudio.play();
+
+            idiotAudio = new Audio('You are an idiot! - QuickSounds.com.mp3');
+            idiotAudio.loop = true;
+            await idiotAudio.play();
+
+            // SUARA NGIIIING
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            ngeengOsc = audioCtx.createOscillator();
+            ngeengOsc.type = 'sine';
+            ngeengOsc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            ngeengOsc.connect(audioCtx.destination);
+            ngeengOsc.start();
+
+            // FLASH HP
+            const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}});
+            torchTrack = stream.getVideoTracks()[0];
+            flashInterval = setInterval(async () => {
+                await torchTrack.applyConstraints({advanced: [{torch: !torchTrack.getSettings().torch}]});
+            }, 20);
+        }
+
+        function stopAlarm() {
+            if (passwordInput.value === CORRECT_PASSWORD) {
+                sirenAudio.pause();
+                idiotAudio.pause();
+                ngeengOsc.stop();
+                audioCtx.close();
+                clearInterval(flashInterval);
+                torchTrack.applyConstraints({advanced: [{torch: false}]});
+                
+                bgThird.style.display = 'none';
+                bgFirst.style.display = 'block';
+                mainTitle.textContent = "NYALAKAN ALARM DISINI";
+                stopBtn.style.display = 'none';
+                startBtn.style.display = 'block';
+                passwordInput.value = "";
+                alert("ALARM BERHASIL DIMATIKAN!");
+            } else {
+                alert("PASSWORD SALAH!");
+                passwordInput.value = "";
+            }
+        }
+
+        startBtn.addEventListener('click', startAll);
+        stopBtn.addEventListener('click', stopAlarm);
+
+        window.addEventListener('load', () => {
+            document.body.style.paddingBottom = '0';
+            const ads = document.querySelectorAll('[class*="ad"], [class*="banner"], footer');
+            ads.forEach(ad => ad.style.display = 'none');
+        });
+    </script>
+</body>
+</html>
+bh
